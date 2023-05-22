@@ -25,7 +25,7 @@ class CategoriesScreen extends ConsumerWidget {
       MaterialPageRoute(
         builder: (ctx) => MealsScreen(
           title: category.title,
-          meals: meals,
+          category: category,
         ),
       ),
     );

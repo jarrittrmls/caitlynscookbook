@@ -34,7 +34,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 children: [
                   Card(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(0),
                     ),
                     color: Theme.of(context).colorScheme.secondaryContainer,
                     clipBehavior: Clip.hardEdge,

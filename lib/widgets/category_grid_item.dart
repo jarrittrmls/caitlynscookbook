@@ -26,7 +26,7 @@ class CategoryGridItem extends StatelessWidget {
             splashColor: Theme.of(context).primaryColor,
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              padding: const EdgeInsets.fromLTRB(16, 70, 16, 16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 gradient: LinearGradient(
@@ -41,6 +41,7 @@ class CategoryGridItem extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
                       color: Theme.of(context).colorScheme.onBackground,
                     ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),

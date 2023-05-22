@@ -27,7 +27,9 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
         key: ValueKey(shoppingList[index]),
         onDismissed: (direction) {
           setState(() {
-            shoppingList.removeAt(index);
+            ref
+                .read(shoppingListProvider.notifier)
+                .removeIngredient(shoppingList[index]);
           });
         },
         child: InkWell(
