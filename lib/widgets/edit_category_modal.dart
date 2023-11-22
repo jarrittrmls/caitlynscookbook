@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
@@ -7,38 +6,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meals_app/models/category.dart';
 import 'package:meals_app/providers/categories_provider.dart';
 
-class CreateCategoryModal extends ConsumerStatefulWidget {
-  const CreateCategoryModal({super.key});
+class EditCategoryModal extends ConsumerStatefulWidget {
+  const EditCategoryModal({super.key, required this.category});
+
+  final Category category;
 
   @override
-  ConsumerState<CreateCategoryModal> createState() =>
-      _CreateCategoryModalState();
+  ConsumerState<EditCategoryModal> createState() => _EditCategoryModalState();
 }
 
-class _CreateCategoryModalState extends ConsumerState<CreateCategoryModal> {
+class _EditCategoryModalState extends ConsumerState<EditCategoryModal> {
   final _titleController = TextEditingController();
   Color pickerColor = Color(0xff443a49);
   Color currentColor = Color(0xff443a49);
 
-  void _createCategory() {
-    if (_titleController.text.trim().isEmpty) {
-      _showDialog();
-      return;
-    }
-
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-    final uid = user!.uid;
-
-    addCategory(
-      Category(
-        title: _titleController.text,
-        color: currentColor,
-        userId: uid,
-      ),
-    );
-
-    Navigator.pop(context);
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.category.title!;
+    currentColor = widget.category.color!;
+    pickerColor = currentColor;
   }
 
   void _showColorPicker() async {
@@ -88,6 +75,18 @@ class _CreateCategoryModalState extends ConsumerState<CreateCategoryModal> {
         ),
       );
     } else {}
+  }
+
+  void _updateCategory() {
+    if (_titleController.text.trim().isEmpty) {
+      _showDialog();
+      return;
+    }
+    widget.category.title = _titleController.text;
+    widget.category.color = currentColor;
+
+    updateCategory(widget.category);
+    Navigator.pop(context);
   }
 
   @override
@@ -159,8 +158,8 @@ class _CreateCategoryModalState extends ConsumerState<CreateCategoryModal> {
                     child: const Text("Cancel"),
                   ),
                   ElevatedButton(
-                    onPressed: _createCategory,
-                    child: const Text("Create Category"),
+                    onPressed: _updateCategory,
+                    child: const Text("Update Category"),
                   ),
                 ],
               ),

@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:meals_app/data/dummy_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meals_app/models/meal.dart';
 import 'package:meals_app/models/scheduled_meal.dart';
 import 'package:meals_app/screens/meal_details.dart';
+import 'package:meals_app/providers/scheduled_meals_provider.dart';
+import 'package:meals_app/widgets/scheduled_meals.dart';
 
-class CalendarScreen extends StatefulWidget {
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  State<CalendarScreen> createState() => _CalendarScreenState();
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
-  final List<ScheduledMeal> scheduledMeals = dummyScheduledMeals;
-
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void selectMeal(BuildContext context, Meal meal) {
     Navigator.of(context).push(MaterialPageRoute(
         builder: (ctx) => MealDetailsScreen(
@@ -23,95 +23,42 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (int i = 0; i < 14; i++)
-              Column(
-                children: [
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(0),
+    return Scaffold(
+      body: ref.watch(firebaseScheduledMealsProvider).when(
+          data: (scheduledMeals) {
+            return ScheduledMeals(
+                key: ObjectKey(scheduledMeals),
+                scheduledMeals: scheduledMeals,
+                selectMeal: selectMeal,
+                onRemoveMeal: deleteScheduledMeal);
+          },
+          error: (error, stack) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "No meals to show yet...",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineLarge!
+                          .copyWith(
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
                     ),
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    clipBehavior: Clip.hardEdge,
-                    elevation: 2,
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Text(
-                        textAlign: TextAlign.center,
-                        formatter.format(
-                          DateTime(
-                            DateTime.now().year,
-                            DateTime.now().month,
-                            DateTime.now().day + i,
-                          ),
-                        ),
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                    const SizedBox(
+                      height: 16,
                     ),
-                  ),
-                  ListView.builder(
-                    itemCount: scheduledMeals
-                        .where(
-                            (meal) => meal.day.day == (DateTime.now().day + i))
-                        .toList()
-                        .length,
-                    itemBuilder: (ctx, index) => Dismissible(
-                      background: Container(
-                          color: Theme.of(context).colorScheme.error,
-                          margin: Theme.of(context).cardTheme.margin),
-                      key: ValueKey(scheduledMeals[index]),
-                      onDismissed: (direction) {
-                        setState(() {
-                          scheduledMeals.remove(scheduledMeals
-                              .where((meal) =>
-                                  meal.day.day == (DateTime.now().day + i))
-                              .toList()[index]);
-                        });
-                      },
-                      child: InkWell(
-                        onTap: () {
-                          selectMeal(context, scheduledMeals[index].meal);
-                        },
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    Text(
+                      error.toString(),
+                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                            color: Theme.of(context).colorScheme.onBackground,
                           ),
-                          color: Colors.white,
-                          clipBehavior: Clip.hardEdge,
-                          elevation: 2,
-                          margin: const EdgeInsets.symmetric(
-                            vertical: 2,
-                            horizontal: 16,
-                          ),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 0,
-                              horizontal: 16,
-                            ),
-                            child: Text(scheduledMeals
-                                .where((meal) =>
-                                    meal.day.day == (DateTime.now().day + i))
-                                .toList()[index]
-                                .meal
-                                .title),
-                          ),
-                        ),
-                      ),
-                    ),
-                    shrinkWrap: true,
-                    primary: false,
-                  ),
-                ],
+                      textAlign: TextAlign.center,
+                    )
+                  ],
+                ),
               ),
-          ],
-        ),
-      ),
+          loading: () => const Center(child: CircularProgressIndicator())),
     );
   }
 }

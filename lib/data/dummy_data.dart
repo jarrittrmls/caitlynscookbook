@@ -6,6 +6,7 @@ import 'package:meals_app/models/meal.dart';
 import 'package:meals_app/models/scheduled_meal.dart';
 
 // Constants in Dart should be written in lowerCamelcase.
+/*
 final availableCategories = [
   Category(
     title: 'Italian',
@@ -410,3 +411,4 @@ var dummyShoppingList = [
   Ingredient(title: "Sugar", measurement: Measurement.teaspoon, quantity: 1),
   Ingredient(title: "Paprika", measurement: Measurement.teaspoon, quantity: 1),
 ];
+*/

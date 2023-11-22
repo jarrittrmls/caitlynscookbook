@@ -1,3 +1,7 @@
+import 'package:uuid/uuid.dart';
+
+const uuid = Uuid();
+
 enum Measurement {
   small,
   medium,
@@ -23,13 +27,43 @@ enum Measurement {
 }
 
 class Ingredient {
-  const Ingredient({
+  Ingredient({
     required this.title,
     required this.measurement,
     required this.quantity,
-  });
+    this.userId,
+  }) : id = Uuid().v4();
 
-  final String title;
-  final Measurement measurement;
-  final double quantity;
+  Ingredient.fromMap(Map<String, dynamic> data)
+      : id = data['id'],
+        title = data['title'],
+        measurement = _stringToMeasurement(data['measurement']),
+        quantity = data['quantity'],
+        userId = data['userId'];
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'measurement': _measurementToString(measurement),
+      'quantity': quantity,
+      'userId': userId,
+    };
+  }
+
+  final String id;
+  String title;
+  Measurement measurement;
+  double quantity;
+  String? userId;
+
+  static Measurement _stringToMeasurement(String value) {
+    return Measurement.values.firstWhere(
+      (enumValue) => enumValue.toString() == value,
+    );
+  }
+
+  static String _measurementToString(Measurement measurement) {
+    return measurement.toString();
+  }
 }

@@ -44,6 +44,9 @@ dependencies:
   intl: ^0.18.1
   webview_flutter: ^4.2.0
   flutter_colorpicker: ^1.0.3
+  firebase_storage: ^11.2.3
+  image_picker: ^0.8.9
+  cloud_firestore: ^4.8.1
 
 dev_dependencies:
   flutter_test:

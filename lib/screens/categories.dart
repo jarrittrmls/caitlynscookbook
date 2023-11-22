@@ -7,24 +7,19 @@ import 'package:meals_app/providers/meals_provider.dart';
 import 'package:meals_app/screens/meals.dart';
 import 'package:meals_app/widgets/category_grid_item.dart';
 import 'package:meals_app/providers/categories_provider.dart';
+import 'package:meals_app/widgets/edit_category_modal.dart';
 
 class CategoriesScreen extends ConsumerWidget {
   const CategoriesScreen({
     super.key,
-    required this.availableMeals,
   });
 
-  final List<Meal> availableMeals;
-
   void _selectCategory(BuildContext context, Category category) {
-    var meals = availableMeals
-        .where((meal) => meal.categories.contains(category))
-        .toList();
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (ctx) => MealsScreen(
-          title: category.title,
+          title: category.title!,
           category: category,
         ),
       ),
@@ -33,22 +28,45 @@ class CategoriesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final availableCategories = ref.watch(categoriesProvider);
+    final availableCategories = ref.watch(firebaseCategoriesProvider);
     Widget content;
 
+    void _editCategory(BuildContext context, Category category) {
+      showModalBottomSheet(
+        useSafeArea: true,
+        isScrollControlled: true,
+        context: context,
+        builder: (ctx) => EditCategoryModal(category: category),
+      );
+    }
+
     void _removeCategory(Category category) {
-      var meals = availableMeals
-          .where((meal) => meal.categories.contains(category))
-          .toList();
+      var meals = ref.watch(firebaseMealsProvider).when(
+            data: (meals) => meals,
+            loading: () =>
+                [], // Return an empty list or handle loading state accordingly
+            error: (error, stack) {
+              // Handle error state accordingly, for now, returning an empty list
+              print('Error: $error');
+              return [];
+            },
+          );
       if (meals.isEmpty) {
-        ref.read(categoriesProvider.notifier).removeCategory(category);
+        deleteCategory(category);
       } else {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text("Oops"),
-            content: const Text(
-                "It looks like there are still meals registered to this category. Try unregistering them first before deleting the category."),
+            title: Text(
+              "Oops",
+              style: Theme.of(context)
+                  .primaryTextTheme
+                  .headlineSmall
+                  ?.copyWith(color: Theme.of(context).colorScheme.primary),
+            ),
+            content: Text(
+                "It looks like there are still meals registered to this category. Try unregistering them first before deleting the category.",
+                style: Theme.of(context).primaryTextTheme.bodyMedium),
             actions: [
               TextButton(
                 onPressed: () {
@@ -62,53 +80,80 @@ class CategoriesScreen extends ConsumerWidget {
       }
     }
 
-    if (availableCategories.isEmpty) {
-      content = Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "No meals to show yet...",
-              style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                    color: Theme.of(context).colorScheme.onBackground,
-                  ),
-            ),
-            const SizedBox(
-              height: 16,
-            ),
-            Text(
-              "Try adding some meals or selecting a different category!",
-              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                    color: Theme.of(context).colorScheme.onBackground,
-                  ),
-            )
-          ],
-        ),
-      );
-    } else {
-      content = GridView(
-        padding: const EdgeInsets.all(24),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 3 / 2,
-          crossAxisSpacing: 20,
-          mainAxisSpacing: 20,
-        ),
-        children: [
-          for (final category in availableCategories)
-            CategoryGridItem(
-              category: category,
-              onSelectCategory: () {
-                _selectCategory(context, category);
-              },
-              onRemoveCategory: () {
-                _removeCategory(category);
-              },
-            )
-        ],
-      );
-    }
-
-    return content;
+    return Scaffold(
+      body: ref.watch(firebaseCategoriesProvider).when(
+          data: (categories) {
+            if (categories.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "No meals to show yet...",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineLarge!
+                          .copyWith(
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              return GridView(
+                padding: const EdgeInsets.all(24),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 3 / 2,
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 20,
+                ),
+                children: [
+                  for (final category in categories)
+                    CategoryGridItem(
+                      category: category,
+                      onSelectCategory: () {
+                        _selectCategory(context, category);
+                      },
+                      onEditCategory: () {
+                        _editCategory(context, category);
+                      },
+                      onRemoveCategory: () {
+                        _removeCategory(category);
+                      },
+                    )
+                ],
+              );
+            }
+          },
+          error: (error, stack) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Something went wrong...",
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineLarge!
+                          .copyWith(
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                    ),
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    Text(
+                      error.toString(),
+                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
+                      textAlign: TextAlign.center,
+                    )
+                  ],
+                ),
+              ),
+          loading: () => const Center(child: CircularProgressIndicator())),
+    );
   }
 }

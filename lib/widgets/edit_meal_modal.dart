@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
@@ -13,15 +12,16 @@ import 'package:meals_app/providers/meals_provider.dart';
 import 'package:meals_app/widgets/meal_image_picker.dart';
 import 'package:meals_app/widgets/new_meal_ingredient_modal.dart';
 
-class CreateMealModal extends ConsumerStatefulWidget {
-  const CreateMealModal({super.key});
+class EditMealModal extends ConsumerStatefulWidget {
+  const EditMealModal({super.key, required this.meal});
+  final Meal meal;
 
   @override
-  ConsumerState<CreateMealModal> createState() => _CreateMealModalState();
+  ConsumerState<EditMealModal> createState() => _EditMealModalState();
 }
 
-class _CreateMealModalState extends ConsumerState<CreateMealModal> {
-  final List<Ingredient> ingredients = [];
+class _EditMealModalState extends ConsumerState<EditMealModal> {
+  List<Ingredient> ingredients = [];
   final _titleController = TextEditingController();
   final _linkController = TextEditingController();
   final _instructionsController = TextEditingController();
@@ -32,6 +32,21 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
   var _affordability = Affordability.unknown;
   int iAffordability = 0;
   String? imageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.meal.title;
+    _linkController.text = widget.meal.recipeUrl.toString();
+    _instructionsController.text = widget.meal.instructions.toString();
+    _durationController.text = widget.meal.duration.toString();
+    ingredients = widget.meal.ingredients!;
+    _selectedCategories = widget.meal.categories;
+    _complexity = widget.meal.complexity!;
+    _affordability = widget.meal.affordability!;
+    imageUrl = widget.meal.imageUrl;
+    mapAffordability();
+  }
 
   void _showDialog() {
     if (Platform.isIOS) {
@@ -93,25 +108,17 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
       duration = enteredDuration;
     }
 
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-    final uid = user!.uid;
+    widget.meal.title = _titleController.text;
+    widget.meal.categories = _selectedCategories;
 
-    addMeal(
-      Meal(
-        title: _titleController.text,
-        imageUrl:
-            imageUrl ?? "https://clipground.com/images/no-image-png-5.jpg",
-        categories: _selectedCategories,
-        recipeUrl: _linkController.text,
-        ingredients: ingredients,
-        instructions: _instructionsController.text,
-        affordability: _affordability,
-        complexity: _complexity,
-        duration: duration,
-        userId: uid,
-      ),
-    );
+    widget.meal.recipeUrl = _linkController.text;
+    widget.meal.ingredients = ingredients;
+    widget.meal.instructions = _instructionsController.text;
+    widget.meal.affordability = _affordability;
+    widget.meal.complexity = _complexity;
+    widget.meal.duration = duration;
+
+    updateMeal(widget.meal);
     Navigator.pop(context);
   }
 
@@ -137,14 +144,17 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    mapAffordability();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final availableCategories = ref.read(firebaseCategoriesProvider);
+    final availableCategories = ref.watch(firebaseCategoriesProvider).when(
+          data: (availableCategories) => availableCategories,
+          loading: () =>
+              [], // Return an empty list or handle loading state accordingly
+          error: (error, stack) {
+            // Handle error state accordingly, for now, returning an empty list
+            print('Error: $error');
+            return [];
+          },
+        );
     final keyboardPadding = MediaQuery.of(context).viewInsets.bottom;
 
     String formatFloat(double n) {
@@ -174,7 +184,10 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
                 const SizedBox(height: 16),
                 Text("Photo",
                     style: Theme.of(context).primaryTextTheme.bodyLarge),
-                MealImagePicker(onSelectMeal: _setImage),
+                MealImagePicker(
+                  onSelectMeal: _setImage,
+                  existingImage: imageUrl,
+                ),
                 Row(
                   children: [
                     Text("Categories *",
@@ -194,51 +207,34 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
                                           .primaryTextTheme
                                           .titleLarge),
                                   content: SingleChildScrollView(
-                                    child: Consumer(
-                                      builder: (context, watch, child) {
-                                        final asyncValue = ref
-                                            .watch(firebaseCategoriesProvider);
-
-                                        return asyncValue.when(
-                                          data: (availableCategories) {
-                                            return Column(
-                                              children: [
-                                                for (var category
-                                                    in availableCategories)
-                                                  CheckboxListTile(
-                                                    value:
-                                                        _tempSelectedCategories
-                                                            .contains(category),
-                                                    controlAffinity:
-                                                        ListTileControlAffinity
-                                                            .leading,
-                                                    onChanged: (checked) {
-                                                      setTempState(() {
-                                                        if (checked!) {
-                                                          _tempSelectedCategories
-                                                              .add(category);
-                                                        } else {
-                                                          _tempSelectedCategories
-                                                              .remove(category);
-                                                        }
-                                                      });
-                                                    },
-                                                    title: Text(
-                                                      category.title!,
-                                                      style: Theme.of(context)
-                                                          .primaryTextTheme
-                                                          .bodyMedium,
-                                                    ),
-                                                  )
-                                              ],
-                                            );
-                                          },
-                                          loading: () =>
-                                              CircularProgressIndicator(),
-                                          error: (error, stack) =>
-                                              Text("Error: $error"),
-                                        );
-                                      },
+                                    child: Column(
+                                      children: [
+                                        for (var category
+                                            in availableCategories)
+                                          CheckboxListTile(
+                                            value: _tempSelectedCategories
+                                                .contains(category),
+                                            controlAffinity:
+                                                ListTileControlAffinity.leading,
+                                            onChanged: (checked) {
+                                              setTempState(() {
+                                                if (checked!) {
+                                                  _tempSelectedCategories
+                                                      .add(category);
+                                                } else {
+                                                  _tempSelectedCategories
+                                                      .remove(category);
+                                                }
+                                              });
+                                            },
+                                            title: Text(
+                                              category.title!,
+                                              style: Theme.of(context)
+                                                  .primaryTextTheme
+                                                  .bodyMedium,
+                                            ),
+                                          )
+                                      ],
                                     ),
                                   ),
                                   actions: [
@@ -299,7 +295,7 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
                 const SizedBox(width: 16),
                 TextField(
                   controller: _linkController,
-                  maxLength: 200,
+                  maxLength: 50,
                   decoration: const InputDecoration(
                     label: Text("URL to recipe"),
                   ),
@@ -421,10 +417,7 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
                   decoration: const InputDecoration(
                     label: Text("Instructions"),
                   ),
-                  style: Theme.of(context)
-                      .primaryTextTheme
-                      .bodyMedium
-                      ?.copyWith(color: Theme.of(context).colorScheme.primary),
+                  style: Theme.of(context).primaryTextTheme.bodyMedium,
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -548,7 +541,7 @@ class _CreateMealModalState extends ConsumerState<CreateMealModal> {
                     ),
                     ElevatedButton(
                       onPressed: _submitNewMeal,
-                      child: const Text("Create Recipe"),
+                      child: const Text("Update Recipe"),
                     ),
                   ],
                 ),

@@ -7,11 +7,13 @@ class CategoryGridItem extends StatelessWidget {
     super.key,
     required this.category,
     required this.onSelectCategory,
+    required this.onEditCategory,
     required this.onRemoveCategory,
   });
 
   final Category category;
   final void Function() onSelectCategory;
+  final void Function() onEditCategory;
   final void Function() onRemoveCategory;
 
   @override
@@ -23,6 +25,7 @@ class CategoryGridItem extends StatelessWidget {
           width: double.infinity,
           child: InkWell(
             onTap: onSelectCategory,
+            onLongPress: onEditCategory,
             splashColor: Theme.of(context).primaryColor,
             borderRadius: BorderRadius.circular(16),
             child: Container(
@@ -31,13 +34,13 @@ class CategoryGridItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 gradient: LinearGradient(
                   colors: [
-                    category.color.withOpacity(0.55),
-                    category.color.withOpacity(0.9),
+                    category.color!.withOpacity(0.55),
+                    category.color!.withOpacity(0.9),
                   ],
                 ),
               ),
               child: Text(
-                category.title,
+                category.title!,
                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
                       color: Theme.of(context).colorScheme.onBackground,
                     ),

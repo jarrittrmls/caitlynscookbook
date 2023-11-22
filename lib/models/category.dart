@@ -7,9 +7,27 @@ class Category {
   Category({
     required this.title,
     this.color = Colors.orange,
+    required this.userId,
   }) : id = uuid.v4();
 
-  final String id;
-  final String title;
-  final Color color;
+  Category.fromMap(Map<String, dynamic> data) {
+    id = data['catid'];
+    title = data['title'];
+    color = Color(int.parse(data['color'].toString(), radix: 16));
+    userId = data['userId'];
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'catid': id,
+      'title': title,
+      'color': color!.value.toRadixString(16),
+      'userId': userId,
+    };
+  }
+
+  String? id;
+  String? title;
+  Color? color;
+  String? userId;
 }

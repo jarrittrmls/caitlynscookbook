@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:meals_app/models/meal.dart';
 import 'package:meals_app/widgets/meal_item_trait.dart';
@@ -45,8 +47,12 @@ class MealItem extends StatelessWidget {
           children: [
             FadeInImage(
               placeholder: MemoryImage(kTransparentImage),
-              image: NetworkImage(
-                  meal.imageUrl!), // Change to image from blob? fileImage?
+              image: meal.imageUrl ==
+                      "https://clipground.com/images/no-image-png-5.jpg"
+                  ? const NetworkImage(
+                      "https://clipground.com/images/no-image-png-5.jpg")
+                  : Image.file(File(meal.imageUrl!))
+                      .image, // Change to image from blob? fileImage?
               fit: BoxFit.cover,
               height: 200,
               width: double.infinity,

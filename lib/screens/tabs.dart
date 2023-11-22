@@ -9,7 +9,9 @@ import 'package:meals_app/screens/categories.dart';
 import 'package:meals_app/screens/filters.dart';
 import 'package:meals_app/screens/shoppinglist.dart';
 import 'package:meals_app/widgets/main_drawer.dart';
+import 'package:meals_app/widgets/new_ingredient_modal.dart';
 import 'package:meals_app/widgets/popup_menu.dart';
+import 'package:meals_app/widgets/schedule_meal_modal.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({super.key});
@@ -40,24 +42,41 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final availableMeals = ref.watch(filteredMealsProvider);
-
-    Widget activePage = CategoriesScreen(
-      availableMeals: availableMeals,
-    );
+    //final availableMeals = ref.watch(filteredMealsProvider);
+    FloatingActionButton? createButton;
+    Widget activePage = const CategoriesScreen();
     var activePageTitle = "Calendar";
 
     if (_selectedPageIndex == 1) {
-      activePage = CategoriesScreen(
-        availableMeals: availableMeals,
-      );
+      activePage = const CategoriesScreen();
       activePageTitle = "Recipes";
+      createButton = null;
     } else if (_selectedPageIndex == 2) {
       activePage = const ShoppingListScreen();
       activePageTitle = "Shopping List";
+      createButton = FloatingActionButton(
+          onPressed: () {
+            showModalBottomSheet(
+              useSafeArea: true,
+              isScrollControlled: true,
+              context: context,
+              builder: (ctx) => const NewIngredientModal(),
+            );
+          },
+          child: const Icon(Icons.add));
     } else {
       activePage = const CalendarScreen();
       activePageTitle = "Calendar";
+      createButton = FloatingActionButton(
+          onPressed: () {
+            showModalBottomSheet(
+              useSafeArea: true,
+              isScrollControlled: true,
+              context: context,
+              builder: (ctx) => const ScheduleMealModal(),
+            );
+          },
+          child: const Icon(Icons.add));
     }
 
     return Scaffold(
@@ -67,6 +86,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           PopupMenu(pageIndex: _selectedPageIndex),
         ],
       ),
+      floatingActionButton: createButton,
       drawer: MainDrawer(
         onSelectScreen: _setScreen,
       ),

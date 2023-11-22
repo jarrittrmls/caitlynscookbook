@@ -17,6 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   var _isLogin = true;
   var _enteredEmail = "";
   var _enteredPassword = "";
+  var _confirmPassword = "";
 
   void _submit() async {
     final isValid = _form.currentState!.validate();
@@ -36,7 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
             email: _enteredEmail, password: _enteredPassword);
       }
     } on FirebaseAuthException catch (error) {
-      if (error.code == "email-already-in-use") {}
+      if (error.code == "email-already-in-use") {
+        SnackBar(
+            content:
+                Text(error.message ?? "Account already exists for that email"));
+      }
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(error.message ?? "Authentication failed.")));
@@ -111,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 value.trim().length < 6) {
                               return "Password must be at least 6 characters long";
                             }
-
+                            _enteredPassword = value;
                             return null;
                           },
                           onSaved: (value) {
@@ -119,6 +124,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                           style: Theme.of(context).primaryTextTheme.bodyMedium,
                         ),
+                        if (!_isLogin)
+                          TextFormField(
+                            decoration: const InputDecoration(
+                                labelText: "Confirm Password"),
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null ||
+                                  value.trim().isEmpty ||
+                                  value != _enteredPassword) {
+                                return "Password does not match";
+                              }
+
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _confirmPassword = value!;
+                            },
+                            style:
+                                Theme.of(context).primaryTextTheme.bodyMedium,
+                          ),
                         const SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: _submit,

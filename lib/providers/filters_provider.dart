@@ -7,7 +7,7 @@ enum Filter {
   vegetarian,
   vegan,
 }
-
+/*
 class FiltersNotifier extends StateNotifier<Map<Filter, bool>> {
   FiltersNotifier()
       : super({
@@ -53,3 +53,4 @@ final filteredMealsProvider = Provider((ref) {
     return true;
   }).toList();
 });
+*/

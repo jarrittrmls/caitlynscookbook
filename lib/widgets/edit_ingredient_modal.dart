@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:io';
@@ -7,17 +6,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meals_app/models/ingredient.dart';
 import 'package:meals_app/providers/shopping_list_provider.dart';
 
-class NewIngredientModal extends ConsumerStatefulWidget {
-  const NewIngredientModal({super.key});
+class EditIngredientModal extends ConsumerStatefulWidget {
+  const EditIngredientModal({super.key, required this.ingredient});
+  final Ingredient ingredient;
 
   @override
-  ConsumerState<NewIngredientModal> createState() => _NewIngredientModalState();
+  ConsumerState<EditIngredientModal> createState() =>
+      _EditIngredientModalState();
 }
 
-class _NewIngredientModalState extends ConsumerState<NewIngredientModal> {
+class _EditIngredientModalState extends ConsumerState<EditIngredientModal> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   Measurement _measurement = Measurement.teaspoon;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.ingredient.title;
+    _amountController.text = widget.ingredient.quantity.toString();
+    _measurement = widget.ingredient.measurement;
+  }
 
   void _showDialog() {
     if (Platform.isIOS) {
@@ -67,18 +76,14 @@ class _NewIngredientModalState extends ConsumerState<NewIngredientModal> {
       return;
     }
 
-    final FirebaseAuth auth = FirebaseAuth.instance;
-    final User? user = auth.currentUser;
-    final uid = user!.uid;
+    widget.ingredient.title = _titleController.text;
+    widget.ingredient.quantity = enteredAmount;
+    widget.ingredient.measurement = _measurement;
 
-    addIngredient(
-      Ingredient(
-        title: _titleController.text,
-        quantity: enteredAmount,
-        measurement: _measurement,
-        userId: uid,
-      ),
-    );
+    setState(() {
+      updateIngredient(widget.ingredient);
+    });
+
     Navigator.pop(context);
   }
 
@@ -193,7 +198,7 @@ class _NewIngredientModalState extends ConsumerState<NewIngredientModal> {
                       ),
                       ElevatedButton(
                         onPressed: _submitNewIngredient,
-                        child: const Text("Add to Shopping List"),
+                        child: const Text("Update item"),
                       ),
                     ],
                   )
@@ -228,7 +233,7 @@ class _NewIngredientModalState extends ConsumerState<NewIngredientModal> {
                       ),
                       ElevatedButton(
                         onPressed: _submitNewIngredient,
-                        child: const Text("Add to Shopping List"),
+                        child: const Text("Update Item"),
                       ),
                     ],
                   )

@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:meals_app/models/meal.dart';
 import 'package:meals_app/providers/favorites_provider.dart';
 import 'package:meals_app/providers/meals_provider.dart';
+import 'package:meals_app/widgets/edit_meal_modal.dart';
 import 'package:meals_app/widgets/webview.dart';
 
 class MealDetailsScreen extends ConsumerStatefulWidget {
@@ -55,13 +58,32 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
               },
               icon: Icon(isFavorite ? Icons.star : Icons.star_border)),
         */
-          IconButton(onPressed: () {}, icon: const Icon(Icons.edit)),
+          IconButton(
+              onPressed: () {
+                showModalBottomSheet(
+                  useSafeArea: true,
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (ctx) => EditMealModal(meal: widget.meal),
+                );
+              },
+              icon: const Icon(Icons.edit)),
           IconButton(
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: Text('Delete ${widget.meal.title}?'),
+                    title: Text(
+                      'Are you sure you want to delete ${widget.meal.title}?',
+                      style: Theme.of(context)
+                          .primaryTextTheme
+                          .headlineSmall
+                          ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary),
+                    ),
+                    content: Text(
+                        "This PERMANENTLY deletes this meal from your recipe book.",
+                        style: Theme.of(context).primaryTextTheme.bodyMedium),
                     actions: <Widget>[
                       ElevatedButton(
                         child: const Text('Delete'),
@@ -74,9 +96,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                           );
 
                           setState(() {
-                            ref
-                                .read(mealsProvider.notifier)
-                                .removeMeal(widget.meal);
+                            deleteMeal(widget.meal);
                           });
                           Navigator.of(context).pop();
                           Navigator.of(context).pop();
@@ -97,12 +117,21 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         body: SingleChildScrollView(
           child: Column(
             children: [
-              Image.network(
-                widget.meal.imageUrl!,
-                height: 300,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              if (widget.meal.imageUrl ==
+                  "https://clipground.com/images/no-image-png-5.jpg")
+                Image.network(
+                  "https://clipground.com/images/no-image-png-5.jpg",
+                  height: 300,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                )
+              else
+                Image.file(
+                  File(widget.meal.imageUrl!),
+                  height: 300,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               const SizedBox(
                 height: 14,
               ),
@@ -122,27 +151,30 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                 ),
               const SizedBox(height: 14),
               for (final ingredient in widget.meal.ingredients!)
-                Row(
-                  children: [
-                    Text(
-                      "${widget.formatFloat(ingredient.quantity)} ",
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            color: Theme.of(context).colorScheme.onBackground,
-                          ),
-                    ),
-                    Text(
-                      "${ingredient.measurement.name} ",
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            color: Theme.of(context).colorScheme.onBackground,
-                          ),
-                    ),
-                    Text(
-                      ingredient.title,
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            color: Theme.of(context).colorScheme.onBackground,
-                          ),
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Text(
+                        "${widget.formatFloat(ingredient.quantity)} ",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                      ),
+                      Text(
+                        "${ingredient.measurement.name} ",
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                      ),
+                      Text(
+                        ingredient.title,
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               const SizedBox(height: 24),
               if (widget.meal.instructions!.isNotEmpty)
@@ -161,11 +193,12 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                   widget.meal.instructions!,
                   textAlign: TextAlign.left,
                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.onBackground,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ));

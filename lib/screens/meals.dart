@@ -26,52 +26,85 @@ class MealsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     Widget content;
-    final meals = ref
-        .watch(mealsProvider)
-        .where((meal) => meal.categories.contains(category))
-        .toList();
-
-    if (meals.isEmpty) {
-      content = Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "No meals to show yet...",
-                style: Theme.of(context).textTheme.headlineLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              Text(
-                "Try adding some meals or selecting a different category!",
-                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-              )
-            ],
-          ),
-        ),
-      );
-    } else {
-      content = ListView.builder(
-        itemCount: meals.length,
-        itemBuilder: ((context, index) => MealItem(
-              meal: meals[index],
-              onSelectMeal: (meal) {
-                selectMeal(context, meal);
-              },
-            )),
-      );
-    }
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: content,
+      body: ref.watch(firebaseMealsProvider).when(
+          data: (meals) {
+            final filteredMeals = meals
+                .where((meal) =>
+                    meal.categories.any((c) => c.title == category.title))
+                .toList();
+            if (filteredMeals.isNotEmpty) {
+              return ListView.builder(
+                itemCount: filteredMeals.length,
+                itemBuilder: ((context, index) => MealItem(
+                      meal: filteredMeals[index],
+                      onSelectMeal: (meal) {
+                        selectMeal(context, meal);
+                      },
+                    )),
+              );
+            } else {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "No meals to show yet...",
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineLarge!
+                            .copyWith(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                      ),
+                      const SizedBox(
+                        height: 16,
+                      ),
+                      Text(
+                        "Try adding some meals or selecting a different category!",
+                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                      )
+                    ],
+                  ),
+                ),
+              );
+            }
+          },
+          error: (error, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Something went wrong...",
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineLarge!
+                            .copyWith(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                      ),
+                      const SizedBox(
+                        height: 16,
+                      ),
+                      Text(
+                        error.toString(),
+                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                              color: Theme.of(context).colorScheme.onBackground,
+                            ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+          loading: () => const Center(child: CircularProgressIndicator())),
     );
   }
 }
