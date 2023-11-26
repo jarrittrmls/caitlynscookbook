@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       if (_isLogin) {
-        final userCredentials = _firebase.signInWithEmailAndPassword(
+        final userCredentials = await _firebase.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
         final userCredentials = await _firebase.createUserWithEmailAndPassword(
